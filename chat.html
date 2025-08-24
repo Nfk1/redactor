@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChatGPT Interface</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: #ffffff;
+        color: #333;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        color: rgb(0, 0, 0);
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .chat-wrapper {
+        /*background: #c69e6b;*/
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      .chat-history {
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+      }
+
+      .message {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 8px;
+      }
+
+      .message.user {
+        background: #e0f7fa;
+        border-left: 4px solid #2196f3;
+        text-align: right;
+      }
+
+      .message.bot {
+        background: #f0f8ff;
+        border-right: 4px solid #1eff00;
+        text-align: left;
+      }
+
+      .message-input {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      textarea {
+        width: 75%;
+        height: 100px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        resize: vertical;
+      }
+
+      button {
+        width: 20%;
+        padding: 10px;
+        background: #4f2d01;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #45a049;
+      }
+
+      footer {
+        text-align: center;
+        padding: 20px;
+        background: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>ChatGPT Interface</h1>
+        <p>Простой интерфейс для работы с AI-ассистентом</p>
+      </header>
+
+      <div class="chat-wrapper">
+        <div class="chat-history" id="chatHistory">
+          <!-- История сообщений будет отображаться здесь -->
+        </div>
+
+        <div class="message-input">
+          <textarea id="query" placeholder="Введите ваш запрос..."></textarea>
+          <button onclick="sendRequest()">Отправить</button>
+        </div>
+      </div>
+
+      <footer>
+        <p>&copy; 2025 AI Assistant</p>
+      </footer>
+    </div>
+    <script>
+      // Получаем необходимые элементы DOM
+      const queryInput = document.getElementById("query");
+      const chatHistory = document.getElementById("chatHistory");
+
+      // Функция для добавления сообщения в историю чата
+      function addMessage(text, type) {
+        const message = document.createElement("div");
+        message.classList.add("message", type);
+        message.innerText = text;
+        chatHistory.appendChild(message);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+
+      // Основная функция отправки запроса
+      async function sendRequest() {
+        try {
+          // Получаем текст запроса
+          const query = queryInput.value.trim();
+
+          if (!query) {
+            alert("Пожалуйста, введите запрос");
+            return;
+          }
+
+          // Добавляем сообщение пользователя в историю
+          addMessage(query, "user");
+
+          // Очищаем поле ввода
+          queryInput.value = "";
+
+          // Формируем тело запроса
+          const requestBody = {
+            query: query,
+          };
+
+          // Отправляем POST-запрос
+          const response = await fetch(
+            "https://webhook.nodul.ru/12738/dev/30d1a881-9c65-4032-b4be-3b6018d2e667",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(requestBody),
+            }
+          );
+
+          // Проверяем статус ответа
+          if (!response.ok) {
+            throw new Error(`Ошибка сети: ${response.statusText}`);
+          }
+
+          // Получаем ответ в виде текста
+          const responseText = await response.text();
+
+          // Добавляем только основной текст ответа
+          addMessage(responseText, "bot");
+        } catch (error) {
+          // Обрабатываем ошибки
+          addMessage(`Ошибка: ${error.message}`, "error");
+        }
+      }
+
+      // Добавляем обработчик события для отправки через Enter
+      queryInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendRequest();
+        }
+      });
+
+      // Инициализация при загрузке страницы
+      window.addEventListener("load", () => {
+        addMessage("Привет! Я готов помочь вам. Задайте свой вопрос.", "bot");
+      });
+    </script>
+  </body>
+</html>

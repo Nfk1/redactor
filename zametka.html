@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+      }
+      textarea {
+        width: 400px;
+        height: 700px;
+        border: 0;
+        font-size: 26px;
+        font-weight: bold;
+      }
+      textarea:focus {
+        border: none;
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Заметки</h1>
+    <textarea
+      name=""
+      id="zametka"
+      placeholder="введите свои заметки"
+    ></textarea>
+    <script>
+      const editor1 = document.getElementById("zametka");
+      try {
+        const savedText1 = localStorage.getItem("savedText1");
+        if (savedText1 !== null) {
+          editor1.value = savedText1;
+        }
+      } catch (error) {
+        console.error("Ошибка загрузки сохраненного текста:", error);
+      }
+      setInterval(() => {
+        try {
+          const content = editor1.value;
+          localStorage.setItem("savedText1", content);
+          console.log("Текст автосохранён");
+        } catch (error) {
+          console.error("Ошибка автосохранения:", error);
+        }
+      }, 1000);
+    </script>
+  </body>
+</html>

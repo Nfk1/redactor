@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Редактор текста</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+  </head>
+  <body>
+    <div id="modalOverlayRight" class="modal-overlayRight">
+      <div class="modalRight">
+        <button class="modal-close-Right" id="closeModalBtnRight">
+          &times;
+        </button>
+        <iframe src=""></iframe>
+      </div>
+    </div>
+    <div class="editor-container">
+      <div class="editor-header">
+        <div class="editor-header-list">
+          <input
+            type="text"
+            id="docTitleInput"
+            placeholder="Введите название документа"
+          />
+          <button class="theme-toggle" aria-label="Toggle light/dark theme">
+            <span class="toggle-ball"></span>
+          </button>
+        </div>
+      </div>
+      <div class="toolbar" aria-label="Панель инструментов редактирования">
+        <button
+          id="italicBtn"
+          type="button"
+          data-cmd="italic"
+          title="Курсив (Ctrl+I)"
+        >
+          <i>К</i>
+        </button>
+        <button
+          id="boldBtn"
+          type="button"
+          data-cmd="bold"
+          title="Жирный (Ctrl+B)"
+        >
+          <b>Ж</b>
+        </button>
+        <button
+          id="strikeBtn"
+          type="button"
+          data-cmd="strikeThrough"
+          title="Зачеркнутый"
+        >
+          <s>abc</s>
+        </button>
+        <button type="button" data-cmd="justifyLeft" title="Выровнять влево">
+          <img src="right.png" alt="" />
+        </button>
+        <button
+          type="button"
+          data-cmd="justifyCenter"
+          title="Выровнять по центру"
+        >
+          <img src="center.png" alt="" />
+        </button>
+        <button type="button" data-cmd="justifyRight" title="Выровнять вправо">
+          <img src="left.png" alt="" />
+        </button>
+        <button type="button" id="insertStars" title="Вставить *** по центру">
+          ***
+        </button>
+        <button id="openModalBtn">GPT</button>
+        <button id="openModalChatBtn">Заметки</button>
+        <button id="increaseText">+</button>
+        <button id="decreaseText">-</button>
+        <button id="Tab">Tab</button>
+        <button id="fileInput">Загрузить</button>
+
+        <input
+          type="file"
+          id="hiddenFileInput"
+          accept=".docx"
+          style="display: none"
+        />
+      </div>
+      <div
+        id="editor"
+        contenteditable="true"
+        spellcheck="false"
+        aria-label="Текстовый редактор"
+      ></div>
+      <div class="editor-footer">
+        <div>
+          <span>Cимволов: <span id="charCount">0</span></span>
+          <span style="margin-left: 10px"
+            >Страниц: <span id="listCount">0</span></span
+          >
+        </div>
+
+        <div class="buttons">
+          <button class="clear-btn" id="clearBtn" type="button">
+            Очистить
+          </button>
+          <button id="saveBtn" type="button">Сохранить</button>
+          <button id="downloadDocxBtn">Скачать DOCX</button>
+        </div>
+      </div>
+    </div>
+    <div id="modalOverlayLeft" class="modal-overlayLeft">
+      <div class="modalLeft">
+        <button class="modal-close-Left" id="closeModalBtnLeft">&times;</button>
+        <iframe src=""></iframe>
+      </div>
+    </div>
+
+    <textarea placeholder="Начните писать здесь..."></textarea>
+    <script src="script.js"></script>
+    <script type="module">
+      // Импортируем нужные компоненты из docx как ES-модуль
+      import {
+        Document,
+        Packer,
+        Paragraph,
+        TextRun,
+      } from "https://cdn.jsdelivr.net/npm/docx@9.5.1/+esm";
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const downloadDocxBtn = document.getElementById("downloadDocxBtn");
+        const editor = document.getElementById("editor");
+        const docTitleInput = document.getElementById("docTitleInput");
+
+        // Функция преобразования HTML-элемента в массив TextRun с форматированием
+        function htmlToDocxRuns(element) {
+          const runs = [];
+
+          element.childNodes.forEach((node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              if (node.textContent.trim() !== "") {
+                runs.push(new TextRun(node.textContent));
+              }
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+              let runProps = { text: node.textContent };
+
+              // Проверяем теги и ставим стили
+              switch (node.tagName) {
+                case "B":
+                case "STRONG":
+                  runProps.bold = true;
+                  break;
+                case "I":
+                case "EM":
+                  runProps.italics = true;
+                  break;
+                case "U":
+                  runProps.underline = {};
+                  break;
+                case "S":
+                case "STRIKE":
+                  runProps.strike = true;
+                  break;
+              }
+
+              runs.push(new TextRun(runProps));
+            }
+          });
+
+          return runs;
+        }
+
+        // Разбор всего содержимого editor по блочным элементам и парсинг в параграфы
+        function htmlToDocxParagraphs(html) {
+          const container = document.createElement("div");
+          container.innerHTML = html;
+
+          const paragraphs = [];
+
+          // Перебираем параграфы или блоки, считаем каждый блочный элемент параграфом
+          container.childNodes.forEach((block) => {
+            if (block.nodeType === Node.ELEMENT_NODE) {
+              // Здесь можно расширить поддержку, например, списков и т.д.
+              const childrenRuns = htmlToDocxRuns(block);
+              paragraphs.push(new Paragraph({ children: childrenRuns }));
+            } else if (block.nodeType === Node.TEXT_NODE) {
+              if (block.textContent.trim() !== "") {
+                paragraphs.push(
+                  new Paragraph({
+                    children: [new TextRun(block.textContent)],
+                  })
+                );
+              }
+            }
+          });
+
+          return paragraphs;
+        }
+
+        downloadDocxBtn.addEventListener("click", () => {
+          try {
+            // Используем innerHTML, чтобы сохранить форматирование
+            const html = editor.innerHTML;
+            let filename = docTitleInput.value.trim() || "document";
+            filename = filename.replace(/[/:*?"<>|]/g, "_") + ".docx";
+
+            const paragraphs = htmlToDocxParagraphs(html);
+
+            const doc = new Document({
+              sections: [
+                {
+                  children: paragraphs,
+                },
+              ],
+            });
+
+            Packer.toBlob(doc)
+              .then((blob) => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+              })
+              .catch((error) => {
+                console.error("Ошибка экспорта в Word:", error);
+                alert("Ошибка при экспорте документа");
+              });
+          } catch (error) {
+            console.error("Ошибка экспорта в Word:", error);
+            alert("Ошибка при экспорте документа");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
