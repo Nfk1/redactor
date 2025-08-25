@@ -295,6 +295,7 @@ Tab.addEventListener("click", () => {
 
 const button = document.getElementById("fileInput");
 const hiddenInput = document.getElementById("hiddenFileInput");
+
 button.addEventListener("click", () => {
   hiddenInput.click(); // открываем диалог выбора файла
 });
@@ -382,6 +383,3 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   updateToggleButtonBackground();
 });
-
-
-
