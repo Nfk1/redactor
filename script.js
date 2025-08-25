@@ -306,16 +306,17 @@ hiddenInput.addEventListener("change", (event) => {
     const reader = new FileReader();
     reader.onload = function (event) {
       const arrayBuffer = reader.result;
-      mammoth
-        .extractRawText({ arrayBuffer: arrayBuffer })
-        .then((result) => {
-          editor.textContent = result.value;
-        })
-        .catch((err) => {
-          console.error("Ошибка при чтении документа:", err);
-          alert("Не удалось прочитать документ.");
-        });
-    };
+     mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+  .then((result) => {
+    // Убираем лишние пустые строки (замена двойного переноса на один)
+    const cleanedText = result.value.replace(/ns*n/g, 'n');
+    editor.textContent = cleanedText;
+  })
+  .catch((err) => {
+    console.error("Ошибка при чтении документа:", err);
+    alert("Не удалось прочитать документ.");
+  });
+
     reader.readAsArrayBuffer(file);
   } else {
     alert("Пожалуйста, выберите файл формата .docx");
@@ -383,3 +384,4 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   updateToggleButtonBackground();
 });
+
