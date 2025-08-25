@@ -301,37 +301,25 @@ button.addEventListener("click", () => {
 
 hiddenInput.addEventListener("change", (event) => {
   const file = event.target.files[0];
-  
-  if (!file) {
-    alert("Файл не выбран");
-    return;
-  }
-
-  if (!file.name.endsWith(".docx")) {
+  if (file && file.name.endsWith(".docx")) {
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const arrayBuffer = reader.result;
+      mammoth
+        .extractRawText({ arrayBuffer: arrayBuffer })
+        .then((result) => {
+          editor.textContent = result.value;
+        })
+        .catch((err) => {
+          console.error("Ошибка при чтении документа:", err);
+          alert("Не удалось прочитать документ.");
+        });
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
     alert("Пожалуйста, выберите файл формата .docx");
-    return;
   }
-
-  const reader = new FileReader();
-  
-  reader.onload = function(event) {
-    const arrayBuffer = reader.result;
-    
-    mammoth.extractRawText({ arrayBuffer: arrayBuffer })
-      .then((result) => {
-        // Убираем лишние пустые строки
-        const cleanedText = result.value.replace(/\n\s*\n/g, '\n');
-        editor.textContent = cleanedText;
-      })
-      .catch((err) => {
-        console.error("Ошибка при чтении документа:", err);
-        alert("Не удалось прочитать документ.");
-      });
-  };
-
-  reader.readAsArrayBuffer(file); // Переместили сюда
 });
-
 const toggleButton = document.querySelector(".theme-toggle");
 const backFonEditor = document.querySelector("#editor");
 const backFonToolbar = document.querySelector(".toolbar");
@@ -394,5 +382,6 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   updateToggleButtonBackground();
 });
+
 
 
